@@ -17,14 +17,17 @@ export class Comments {
   @Column()
   IssueId: number;
 
+  @Column({nullable: true, default: new Date()})
+  Date: Date;
+
   @Column({ type: "bool", default: false })
   isDeleted: boolean;
 
-  @ManyToOne(() => User, {eager:true})
+  @ManyToOne(() => User,)
   @JoinColumn({ name: "postedBy" })
   user: User;
 
-  @ManyToOne(() => Issue, {eager:true})
+  @ManyToOne(() => Issue)
   @JoinColumn({ name: "IssueId" })
   issue: Issue;
 }

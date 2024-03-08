@@ -42,21 +42,18 @@ export class IssuesController {
     return this.issueService.addIssue(issue, req["payload"].userID);
   }
 
-
-
-  @Post("addComment/:issueId")
+  @Post("addComment/:issueid")
   @UseGuards(AuthenticateAccessGuard)
   @ApiBearerAuth()
-  addComment(@Body() comment: CommentDTO, @Param() issueId: IssueIDDTO, @Req() req: any) {
-    return this.issueService.addComment(comment.comment, issueId.Id, req["payload"].userID);
+  addComment(@Body() comment: CommentDTO, @Param('issueid') issueid: number, @Req() req: any) {
+    return this.issueService.addComment(comment.comment, issueid, req["payload"].userID);
   }
-
 
   @Get("getComments/:issueId")
   @UseGuards(AuthenticateAccessGuard)
   @ApiBearerAuth()
-  getComments(@Param() issueId: IssueIDDTO) {
-    return this.issueService.getCommentsByIssueId(issueId.Id);
+  getComments(@Param('issueId') issueId: number) {
+    return this.issueService.getCommentsByIssueId(issueId);
   }
 
 
@@ -64,15 +61,15 @@ export class IssuesController {
   @UseBy("admin", "super admin")
   @UseGuards(AuthenticateAccessGuard, AuthorizeGuard)
   @ApiBearerAuth()
-  updateIssueStatus(@Param() issueId: IssueIDDTO, @Body() status: UpdateStatusDTO) {
-    return this.issueService.updateIssueStatus(issueId.Id,status.status);
+  updateIssueStatus(@Param('issueId') issueId: number, @Body() status: UpdateStatusDTO) {
+    return this.issueService.updateIssueStatus(issueId,status.status);
   }
 
   @Get('log/:issueId')
   @UseGuards(AuthenticateAccessGuard)
   @ApiBearerAuth()
-  getLogs(@Param() issueId: IssueIDDTO) {
-    return this.issueService.getIssueStatusLog(issueId.Id);
+  getLogs(@Param('issueId') issueId: number) {
+    return this.issueService.getIssueStatusLog(issueId);
   }
   
 }

@@ -23,9 +23,6 @@ export class IssuesService {
     private readonly logRepository: Repository<IssueStatusLog>,
   ) { }
 
-  getHello(): string {
-    return "Hello World!";
-  }
 
   async addCategory(category: CategoryDTO) {
     try {
@@ -43,7 +40,7 @@ export class IssuesService {
 
   async getCategories() {
     try {
-      const categories = await this.categoryRepository.find({where: {isDeleted: false}});
+      const categories = await this.categoryRepository.find({ where: { isDeleted: false } });
       return categories;
     } catch (error) {
       throw new Error("Failed to get categories");
@@ -115,7 +112,7 @@ export class IssuesService {
 
   async getAllIssues() {
     try {
-      return await this.issueRepository.find({where: {isDeleted: false}});
+      return await this.issueRepository.find({ where: { isDeleted: false } });
     }
     catch (error) {
       throw new Error("Failed to get issues");
@@ -128,7 +125,7 @@ export class IssuesService {
 
 
   async addComment(comment: string, issueId: number, userId: number) {
-    const issue = await this.issueRepository.findOne({ where: { IssueId: issueId, isDeleted:false } });
+    const issue = await this.issueRepository.findOne({ where: { IssueId: issueId, isDeleted: false } });
     if (!issue) throw new NotFoundException("Issue does not exist");
     try {
       const newComment = {
@@ -147,7 +144,22 @@ export class IssuesService {
 
   async getCommentsByIssueId(issueId: number) {
     try {
-      const comments = await this.commentRepository.find({ where: { IssueId: issueId, isDeleted:false }, relations: ["user"] });
+      const comments = await this.commentRepository.createQueryBuilder("comment")
+        .leftJoinAndSelect("comment.user", "user")
+        .leftJoinAndSelect("user.role", "role")
+        .select([
+          "comment.CommentId",
+          "comment.CommentText",
+          "comment.Date",
+          "comment.IssueId",
+          "user.userID",
+          "user.username",
+          "role.role"
+        ])
+        .where("comment.IssueId = :issueId", { issueId: issueId })
+        .andWhere("comment.isDeleted = false")
+        .getMany();
+
       return comments;
     } catch (error) {
       throw new Error("Failed to get comments");
@@ -156,22 +168,51 @@ export class IssuesService {
 
   async updateIssueStatus(issueId: number, status: IssueStatus) {
 
-    if (!(status in IssueStatus)) {
-      throw new BadRequestException("Invalid status value");
-    }
-    const issue = await this.issueRepository.findOne({ where: { IssueId: issueId, isDeleted:false } });
-    if (!issue) throw new NotFoundException("Issue does not exist");
 
+    function checkIssueStatus(status:string) {
+      let issueStatus: IssueStatus;
+      switch (status.toLowerCase()) {
+        case 'open':
+          issueStatus = IssueStatus.OPEN;
+          break;
+        case 'in_progress':
+        case 'in progress':
+          issueStatus = IssueStatus.IN_PROGRESS;
+          break;
+        case 'pending':
+          issueStatus = IssueStatus.PENDING;
+          break;
+        case 'onhold':
+        case 'on hold':
+          issueStatus = IssueStatus.ONHOLD;
+          break;
+        case 'resolved':
+          issueStatus = IssueStatus.RESOLVED;
+          break;
+        case 'closed':
+          issueStatus = IssueStatus.CLOSED;
+          break;
+        default:
+          throw new BadRequestException("Invalid status");
+      }
+      return issueStatus;
+    }
+    let issueStatus: IssueStatus = checkIssueStatus(status);
+
+    const issue = await this.issueRepository.findOne({ where: { IssueId: issueId, isDeleted: false } });
+    if (!issue) throw new NotFoundException("Issue does not exist");
+    if (issueStatus == checkIssueStatus(issue.Status)) throw new BadRequestException("Issue is already in " + issueStatus + " status");
     try {
-      await this.issueRepository.update({ IssueId: issueId }, { Status: IssueStatus[status] });
+      await this.issueRepository.update({ IssueId: issueId, isDeleted: false }, { Status: issueStatus });
       const log = {
-        status: IssueStatus[status],
-        date: new Date(Date.now()),
+        status: issueStatus,
+        date: new Date(),
         IssueId: issueId,
       };
       const createdLog = plainToClass(IssueStatusLog, log);
       await this.logRepository.save(createdLog);
-      return issue;
+      const updatedIssue = await this.issueRepository.findOne({ where: { IssueId: issueId, isDeleted: false } });
+      return updatedIssue;
     } catch (error) {
       throw new Error("Failed to update issue status" + error.message);
     }

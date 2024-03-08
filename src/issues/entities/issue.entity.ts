@@ -36,15 +36,15 @@ export class Issue {
   @Column({nullable: false})
   CategoryId: number;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, )
   @JoinColumn({ name: "CreatedBy" })
   createdByUser: User;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, )
   @JoinColumn({ name: "AssignedTo" })
   assignedToUser: User;
 
-  @ManyToOne(() => Category,{eager:true})
+  @ManyToOne(() => Category,)
   @JoinColumn({ name: "CategoryId" })
   category: Category;
 
