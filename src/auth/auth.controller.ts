@@ -1,20 +1,16 @@
 import {
   Body,
   Controller,
-  ExecutionContext,
   Get,
-  Param,
   Post,
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { JwtDTO, loginDTO } from "./auth.types";
+import { loginDTO } from "./auth.types";
 import { AuthService } from "./auth.service";
 import { AuthenticateRefreshGuard } from "./guards/authenticateRefresh.guard";
 import { ApiBearerAuth } from "@nestjs/swagger";
-import { UseBy } from "./decorator/UseBy.decorator";
-import { AuthorizeGuard } from "./guards/authorize.guard";
-import { AuthenticateAccessGuard } from "./guards/authenticateAccess.guard";
+import { GoogleOAuthGuard } from "./guards/google-oauth.guard";
 
 @Controller("auth")
 export class AuthController {
@@ -28,5 +24,15 @@ export class AuthController {
   @ApiBearerAuth()
   refreshToken(@Req() req) {
     return this.authServices.refreshToken(req.payload);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleOAuthGuard)
+  async googleAuth(@Req() req) {}
+
+  @Get('google-redirect')
+  @UseGuards(GoogleOAuthGuard)
+  googleAuthRedirect(@Req() req) {
+    return this.authServices.googleLogin(req);
   }
 }

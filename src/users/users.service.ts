@@ -82,7 +82,7 @@ export class UsersService {
 
   async viewRole(): Promise<UserRole[]> {
     try {
-      return await this.userRoleRepository.find({where: {isDeleted: false}});
+      return await this.userRoleRepository.find({ where: { isDeleted: false } });
     } catch (err) {
       throw new BadRequestException("Unable to fetch Roles");
     }
@@ -101,7 +101,7 @@ export class UsersService {
 
   async findRoleByName(role: string): Promise<UserRole> {
     try {
-      return await this.userRoleRepository.findOne({where:  {role: ILike(role), isDeleted: false} });
+      return await this.userRoleRepository.findOne({ where: { role: ILike(role), isDeleted: false } });
     } catch (err) {
       throw new BadRequestException("Role not found", err.message);
     }
@@ -183,10 +183,10 @@ export class UsersService {
     try {
       const roleIdForUser = await this.userRoleRepository.findOne({
         where: [
-          { role: ILike("user"),isDeleted: false }
+          { role: ILike("user"), isDeleted: false }
         ]
       });
-      const users = await this.usersRepository.find({ where: { roleID: roleIdForUser.roleID,isDeleted: false } });
+      const users = await this.usersRepository.find({ where: { roleID: roleIdForUser.roleID, isDeleted: false } });
       return users;
     } catch (error) {
       throw new Error("Failed to get users");
@@ -197,10 +197,10 @@ export class UsersService {
     try {
       const roleIdForAdmin = await this.userRoleRepository.findOne({
         where: [
-          { role: ILike("admin"),isDeleted: false }
+          { role: ILike("admin"), isDeleted: false }
         ]
       });
-      const admins = await this.usersRepository.find({ where: { role: roleIdForAdmin,isDeleted: false } });
+      const admins = await this.usersRepository.find({ where: { role: roleIdForAdmin, isDeleted: false } });
       return admins;
     } catch (error) {
       throw new Error("Failed to get users");
@@ -212,10 +212,10 @@ export class UsersService {
     try {
       const roleIdForSUPERADMIN = await this.userRoleRepository.findOne({
         where: [
-          { role: ILike("super admin") ,isDeleted: false }
+          { role: ILike("super admin"), isDeleted: false }
         ]
       });
-      const S_admins = await this.usersRepository.find({ where: { role: roleIdForSUPERADMIN ,isDeleted: false } });
+      const S_admins = await this.usersRepository.find({ where: { role: roleIdForSUPERADMIN, isDeleted: false } });
       return S_admins;
     } catch (error) {
       throw new Error("Failed to get users");

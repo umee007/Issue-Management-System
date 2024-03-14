@@ -9,6 +9,9 @@ import { PriorityLevel } from "./enums/priority.enum";
 import { plainToClass } from "class-transformer";
 import { Comments } from "./entities/comments.entity";
 import { IssueStatusLog } from "./entities/issueStatues_Log.entity";
+import { slack_chat_api } from "src/third party APIs/slack_send_message_api";
+import { UsersService } from "src/users/users.service";
+import axios from "axios";
 
 @Injectable()
 export class IssuesService {
@@ -21,6 +24,7 @@ export class IssuesService {
     private readonly commentRepository: Repository<Comments>,
     @InjectRepository(IssueStatusLog)
     private readonly logRepository: Repository<IssueStatusLog>,
+    private readonly userService: UsersService
   ) { }
 
 
@@ -91,7 +95,6 @@ export class IssuesService {
         ReportedDate: new Date(Date.now()),
         CategoryId: categoryId,
       };
-      console.log(newIssue);
       //const createdIssue = this.issueRepository.create(newIssue);
       const createdIssue = plainToClass(Issue, newIssue);
       const savedIssue = await this.issueRepository.save(createdIssue);
@@ -102,9 +105,32 @@ export class IssuesService {
       };
       const createdLog = plainToClass(IssueStatusLog, log);
       await this.logRepository.save(createdLog);
+      const user_who_posted_issue = await this.userService.getProfile(savedIssue.CreatedBy);
+      const message = "New Issue Created. \nDescription: " + savedIssue.Description + "\n By: " + user_who_posted_issue.username + "\nPriority: " + priority+ "\nCategrory: "+categoryId;
+      await this.sendSlackMessage(message);
+
       return createdIssue;
     } catch (error) {
       throw new Error("Failed to add Issue" + error + "   " + error.message);
+    }
+  }
+
+  async sendSlackMessage(message: string): Promise<void> {
+    const webhookUrl = slack_chat_api;
+    const data = {
+      "text": message,
+    };
+
+    try {
+      await axios.post(webhookUrl, data, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Slack message sent successfully.');
+    } catch (error) {
+      console.error('Error sending Slack message:', error);
+      throw new Error('Failed to send Slack message');
     }
   }
 
