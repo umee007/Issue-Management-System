@@ -8,6 +8,7 @@ import * as bcrypt from "bcrypt";
 import * as dotenv from "dotenv";
 import { JwtService } from "@nestjs/jwt";
 import { JwtDTO } from "src/auth/auth.types";
+import { MailerService } from "@nestjs-modules/mailer";
 
 dotenv.config();
 
@@ -18,10 +19,12 @@ export class UsersService {
     @InjectRepository(UserRole)
     private readonly userRoleRepository: Repository<UserRole>,
     private readonly jwt: JwtService,
+    private readonly mailerService: MailerService,
   ) { }
 
   async createUser(data: Partial<UserDTO>): Promise<boolean> {
     try {
+      const OTP = this.sendMail(data.username);
       const user = await this.findRoleByName("user");
       const hash = await bcrypt.hash(
         data.password,
@@ -239,5 +242,26 @@ export class UsersService {
     catch (err) {
       throw new BadRequestException(err.message);
     }
+  }
+
+
+  async sendMail(email: string): Promise<string> {
+    try {
+      const random = Math.floor(1000000 + Math.random() * 9000000);
+      const html = `<h2><strong> Your OTP is ${random} </strong></h2>`;
+      this.mailerService.sendMail({
+        to: String(email),
+        from: process.env.email_user,
+        subject: 'Verify your identity @ IMS',
+        text: 'welcome to our platform',
+        html: html,
+      })
+      return String(random);
+    }
+    catch (err) {
+      throw new BadRequestException("Unable to send mail");
+      return "Mail not sent";
+    }
+
   }
 }

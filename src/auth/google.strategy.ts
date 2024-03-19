@@ -28,8 +28,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             firstName: name.givenName,
             lastName: name.familyName,
             picture: photos[0].value,
-            _accessToken,
-            _refreshToken,
+            'Access Token': _accessToken,
+           'Refresh Token': _refreshToken,
         };
         done(null, user);
     }

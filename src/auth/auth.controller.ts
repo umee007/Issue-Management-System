@@ -10,7 +10,7 @@ import { loginDTO } from "./auth.types";
 import { AuthService } from "./auth.service";
 import { AuthenticateRefreshGuard } from "./guards/authenticateRefresh.guard";
 import { ApiBearerAuth } from "@nestjs/swagger";
-import { GoogleOAuthGuard } from "./guards/google-oauth.guard";
+import { AuthGuard } from "@nestjs/passport";
 
 @Controller("auth")
 export class AuthController {
@@ -27,11 +27,11 @@ export class AuthController {
   }
 
   @Get('google')
-  @UseGuards(GoogleOAuthGuard)
+  @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req) {}
 
   @Get('google-redirect')
-  @UseGuards(GoogleOAuthGuard)
+  @UseGuards(AuthGuard('google'))
   googleAuthRedirect(@Req() req) {
     return this.authServices.googleLogin(req);
   }

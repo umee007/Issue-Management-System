@@ -28,6 +28,11 @@ export class UsersController {
       throw new UnauthorizedException("Unable to Create User");
     }
   }
+
+  // @Get("sendMail")
+  // sendMail() {
+  //   return this.usersService.sendMail('juttg123456.g@gmail.com');
+  // }
   @Delete("deleteUser:/userId")
   @UseBy("admin", "super admin")
   @UseGuards(AuthenticateAccessGuard, AuthorizeGuard)
