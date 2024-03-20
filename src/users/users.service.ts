@@ -9,6 +9,7 @@ import * as dotenv from "dotenv";
 import { JwtService } from "@nestjs/jwt";
 import { JwtDTO } from "src/auth/auth.types";
 import { MailerService } from "@nestjs-modules/mailer";
+import { plainToClass } from "class-transformer";
 
 dotenv.config();
 
@@ -24,7 +25,9 @@ export class UsersService {
 
   async createUser(data: Partial<UserDTO>): Promise<boolean> {
     try {
+      if (this.usersRepository.findOne({ where: { username: data.username } })) throw new BadRequestException("User already exist");
       const OTP = this.sendMail(data.username);
+
       const user = await this.findRoleByName("user");
       const hash = await bcrypt.hash(
         data.password,
@@ -34,9 +37,46 @@ export class UsersService {
         username: data.username,
         password: hash,
         roleID: user.roleID,
+        OTP: OTP,
       };
-      await this.usersRepository.save(this.usersRepository.create(userdata));
+      await this.usersRepository.save(plainToClass(User,userdata));
       return true;
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async registerOrLoginUserByGoogle(username: string): Promise<object> {
+    try {
+      const userExists = await this.usersRepository.findOne({ where: { username: username, isDeleted: false } });
+      if (userExists) {
+        try {
+          const accessToken = await this.generateAccessToken(userExists);
+          const refreshToken = await this.generateRefreshToken(userExists);
+          return {
+            accessToken,
+            refreshToken,
+          };
+        } catch (err) {
+          throw new BadRequestException("Error Logining in user");
+        }
+
+      }
+      const userRole = await this.findRoleByName("user");
+      const userdata = {
+        username: username,
+        password: null,
+        roleID: userRole.roleID,
+        isVerified: true,
+      };
+      const user = await this.usersRepository.save(this.usersRepository.create(userdata));
+      const accessToken = await this.generateAccessToken(user);
+      const refreshToken = await this.generateRefreshToken(user);
+      return {
+        accessToken,
+        refreshToken,
+      };
+
     } catch (err) {
       throw new BadRequestException(err.message);
     }
@@ -116,6 +156,9 @@ export class UsersService {
       if (!user) {
         throw new BadRequestException("User not found");
       }
+      if(!user.password){
+        throw new BadRequestException("Invalid Credentials");
+      }
       const matchPass = await bcrypt.compare(password, user.password);
       if (!matchPass) {
         throw new BadRequestException("Invalid Credentials");
@@ -164,7 +207,7 @@ export class UsersService {
         where: { userID: id, isDeleted: false }
       });
       if (!user) throw new BadRequestException("User not found");
-      return { username: user.username, role: user.role.role };
+      return { username: user.username, role: user.role.role, isVerified: user.isVerified};
     } catch (err) {
       throw new BadRequestException(err.message);
     }
@@ -245,7 +288,7 @@ export class UsersService {
   }
 
 
-  async sendMail(email: string): Promise<string> {
+  async sendMail(email: string): Promise<number> {
     try {
       const random = Math.floor(1000000 + Math.random() * 9000000);
       const html = `<h2><strong> Your OTP is ${random} </strong></h2>`;
@@ -256,12 +299,37 @@ export class UsersService {
         text: 'welcome to our platform',
         html: html,
       })
-      return String(random);
+      return (random);
     }
     catch (err) {
       throw new BadRequestException("Unable to send mail");
-      return "Mail not sent";
     }
 
+  }
+
+
+  async verifyAccount(userID: number, OTP: number): Promise<boolean> {
+    try {
+      const user = await this.usersRepository.findOne({ where: { userID, isDeleted: false, isVerified: false } });
+      if(user.OTP == null) throw new BadRequestException("Regenerate your OTP");
+      if(user.OTP !== OTP) throw new BadRequestException("Invalid OTP");
+      await this.usersRepository.update(user, { isVerified: true });
+      return true;
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+
+  async generateOTP (userId: number) {
+    try {
+      const user = await this.usersRepository.findOne({ where: { userID:userId, isDeleted: false, } });
+      if(!user) throw new BadRequestException("User not found");
+      const OTP = await this.sendMail(user.username); 
+      await this.usersRepository.update({userID: userId}, { OTP: OTP });
+      return true;
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
   }
 }

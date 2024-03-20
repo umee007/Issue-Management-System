@@ -16,7 +16,7 @@ export class User {
   @Column({ type: "varchar", nullable: false })
   username: string;
 
-  @Column({ type: "varchar", nullable: false })
+  @Column({ type: "varchar", nullable: true })
   password: string;
 
   @Column()
@@ -24,6 +24,12 @@ export class User {
 
   @Column({ type: "bool", default: false })
   isDeleted: boolean;
+
+  @Column ({default: false, type: "bool"})
+  isVerified: boolean;
+
+  @Column({nullable: true, default: null })
+  OTP: number;
 
   @ManyToOne(() => UserRole, { eager: true })
   @JoinColumn({ name: "roleID" })

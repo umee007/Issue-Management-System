@@ -2,6 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import {
   IsEmail,
   IsNotEmpty,
+  IsNumber,
   IsString,
   Matches,
   MaxLength,
@@ -44,5 +45,13 @@ export class DeleteRoleDTO {
   @ApiProperty()
   @IsNotEmpty()
   roleID: number;
+}
+
+
+export class VerifyUserDTO {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsNumber()
+  OTP: number;
 }
 

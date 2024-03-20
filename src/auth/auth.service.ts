@@ -13,15 +13,12 @@ export class AuthService {
     return this.userService.refreshToken(payload);
   }
 
-  googleLogin(req) {
+  async googleLogin(req) {
     if (!req.user) {
       return 'No user from google';
     }
+    return await this.userService.registerOrLoginUserByGoogle(req.user.email);
 
-    return {
-      message: 'User information from google',
-      user: req.user,
-    };
   }
 
 }

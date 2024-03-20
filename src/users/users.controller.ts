@@ -9,7 +9,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
-import { DeleteRoleDTO, DeleteUserDTO, UserDTO, UserRoleDTO } from "./users.type";
+import { DeleteRoleDTO, DeleteUserDTO, UserDTO, UserRoleDTO, VerifyUserDTO } from "./users.type";
 import { UsersService } from "./users.service";
 import { UseBy } from "src/auth/decorator/UseBy.decorator";
 import { AuthenticateAccessGuard } from "src/auth/guards/authenticateAccess.guard";
@@ -135,6 +135,24 @@ export class UsersController {
   getAllSuperAdmin() {
     return this.usersService.getAllSuperAdmins();
   }
+
+
+  @Post("verifyAccount")
+  @UseGuards(AuthenticateAccessGuard)
+  @ApiBearerAuth()
+  verifyAccount(@Req() req, @Body() data:VerifyUserDTO) {
+    return this.usersService.verifyAccount(req.payload.userID, data.OTP);
+  }
+
+
+
+  @Get("generateOTP")
+  @UseGuards(AuthenticateAccessGuard)
+  @ApiBearerAuth()
+  generateOTP(@Req() req) {
+    return this.usersService.generateOTP(req.payload.userID);
+  }
+
 
 
   
